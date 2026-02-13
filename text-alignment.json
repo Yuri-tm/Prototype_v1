@@ -1,0 +1,302 @@
+{
+    "metadata": {
+        "sourceLanguage": "en",
+        "targetLanguage": "es",
+        "title": "The Little Prince - Chapter 1 (Excerpt)",
+        "author": "Antoine de Saint-Exupéry"
+    },
+    "segments": [
+        {
+            "id": "seg_1",
+            "source": [
+                {
+                    "id": "s1_0",
+                    "text": "Once",
+                    "alignments": [
+                        "t1_0"
+                    ]
+                },
+                {
+                    "id": "s1_1",
+                    "text": "when",
+                    "alignments": [
+                        "t1_1"
+                    ]
+                },
+                {
+                    "id": "s1_2",
+                    "text": "I",
+                    "alignments": [
+                        "t1_2"
+                    ]
+                },
+                {
+                    "id": "s1_3",
+                    "text": "was",
+                    "alignments": [
+                        "t1_3"
+                    ]
+                },
+                {
+                    "id": "s1_4",
+                    "text": "six",
+                    "alignments": [
+                        "t1_4"
+                    ]
+                },
+                {
+                    "id": "s1_5",
+                    "text": "years",
+                    "alignments": [
+                        "t1_5"
+                    ]
+                },
+                {
+                    "id": "s1_6",
+                    "text": "old",
+                    "alignments": [
+                        "t1_6"
+                    ]
+                }
+            ],
+            "target": [
+                {
+                    "id": "t1_0",
+                    "text": "Una",
+                    "alignments": [
+                        "s1_0"
+                    ]
+                },
+                {
+                    "id": "t1_1",
+                    "text": "vez",
+                    "alignments": [
+                        "s1_1"
+                    ]
+                },
+                {
+                    "id": "t1_2",
+                    "text": "yo",
+                    "alignments": [
+                        "s1_2"
+                    ]
+                },
+                {
+                    "id": "t1_3",
+                    "text": "tenía",
+                    "alignments": [
+                        "s1_3"
+                    ]
+                },
+                {
+                    "id": "t1_4",
+                    "text": "seis",
+                    "alignments": [
+                        "s1_4"
+                    ]
+                },
+                {
+                    "id": "t1_5",
+                    "text": "años",
+                    "alignments": [
+                        "s1_5"
+                    ]
+                },
+                {
+                    "id": "t1_6",
+                    "text": "de edad",
+                    "alignments": [
+                        "s1_6"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "seg_2",
+            "source": [
+                {
+                    "id": "s2_0",
+                    "text": "I",
+                    "alignments": [
+                        "t2_0"
+                    ]
+                },
+                {
+                    "id": "s2_1",
+                    "text": "saw",
+                    "alignments": [
+                        "t2_1"
+                    ]
+                },
+                {
+                    "id": "s2_2",
+                    "text": "a",
+                    "alignments": [
+                        "t2_2"
+                    ]
+                },
+                {
+                    "id": "s2_3",
+                    "text": "magnificent",
+                    "alignments": [
+                        "t2_3"
+                    ]
+                },
+                {
+                    "id": "s2_4",
+                    "text": "picture",
+                    "alignments": [
+                        "t2_4"
+                    ]
+                }
+            ],
+            "target": [
+                {
+                    "id": "t2_0",
+                    "text": "Vi",
+                    "alignments": [
+                        "s2_0",
+                        "s2_1"
+                    ]
+                },
+                {
+                    "id": "t2_1",
+                    "text": "una",
+                    "alignments": [
+                        "s2_2"
+                    ]
+                },
+                {
+                    "id": "t2_2",
+                    "text": "magnífica",
+                    "alignments": [
+                        "s2_3"
+                    ]
+                },
+                {
+                    "id": "t2_3",
+                    "text": "ilustración",
+                    "alignments": [
+                        "s2_4"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "seg_3",
+            "source": [
+                {
+                    "id": "s3_0",
+                    "text": "It",
+                    "alignments": [
+                        "t3_0"
+                    ]
+                },
+                {
+                    "id": "s3_1",
+                    "text": "was",
+                    "alignments": [
+                        "t3_1"
+                    ]
+                },
+                {
+                    "id": "s3_2",
+                    "text": "a",
+                    "alignments": [
+                        "t3_2"
+                    ]
+                },
+                {
+                    "id": "s3_3",
+                    "text": "picture",
+                    "alignments": [
+                        "t3_3"
+                    ]
+                },
+                {
+                    "id": "s3_4",
+                    "text": "of",
+                    "alignments": [
+                        "t3_4"
+                    ]
+                },
+                {
+                    "id": "s3_5",
+                    "text": "a",
+                    "alignments": [
+                        "t3_5"
+                    ]
+                },
+                {
+                    "id": "s3_6",
+                    "text": "boa",
+                    "alignments": [
+                        "t3_6",
+                        "t3_7"
+                    ]
+                },
+                {
+                    "id": "s3_7",
+                    "text": "constrictor",
+                    "alignments": [
+                        "t3_6",
+                        "t3_7"
+                    ]
+                }
+            ],
+            "target": [
+                {
+                    "id": "t3_0",
+                    "text": "Era",
+                    "alignments": [
+                        "s3_1"
+                    ]
+                },
+                {
+                    "id": "t3_1",
+                    "text": "la",
+                    "alignments": [
+                        "s3_2"
+                    ]
+                },
+                {
+                    "id": "t3_2",
+                    "text": "imagen",
+                    "alignments": [
+                        "s3_3"
+                    ]
+                },
+                {
+                    "id": "t3_3",
+                    "text": "de",
+                    "alignments": [
+                        "s3_4"
+                    ]
+                },
+                {
+                    "id": "t3_4",
+                    "text": "una",
+                    "alignments": [
+                        "s3_5"
+                    ]
+                },
+                {
+                    "id": "t3_5",
+                    "text": "serpiente",
+                    "alignments": [
+                        "s3_6",
+                        "s3_7"
+                    ]
+                },
+                {
+                    "id": "t3_6",
+                    "text": "boa",
+                    "alignments": [
+                        "s3_6",
+                        "s3_7"
+                    ]
+                }
+            ]
+        }
+    ]
+}

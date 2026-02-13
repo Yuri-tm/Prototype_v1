@@ -1,0 +1,645 @@
+{
+  "metadata": {
+    "title": "Маленький принц 1",
+    "sourceLanguage": "en",
+    "targetLanguage": "ru",
+    "createdAt": "2026-02-02T16:54:48.392Z"
+  },
+  "segments": [
+    {
+      "id": "seg_1",
+      "source": [
+        {
+          "id": "s1_0",
+          "text": "Once",
+          "alignments": [
+            "t1_0"
+          ]
+        },
+        {
+          "id": "s1_1",
+          "text": "when",
+          "alignments": [
+            "t1_0"
+          ]
+        },
+        {
+          "id": "s1_2",
+          "text": "I",
+          "alignments": [
+            "t1_1"
+          ]
+        },
+        {
+          "id": "s1_3",
+          "text": "was",
+          "alignments": [
+            "t1_2"
+          ]
+        },
+        {
+          "id": "s1_4",
+          "text": "six",
+          "alignments": [
+            "t1_3"
+          ]
+        },
+        {
+          "id": "s1_5",
+          "text": "years",
+          "alignments": [
+            "t1_4"
+          ]
+        },
+        {
+          "id": "s1_6",
+          "text": "old",
+          "alignments": [
+            "t1_4"
+          ]
+        },
+        {
+          "id": "s1_7",
+          "text": "I",
+          "alignments": [
+            "t1_6"
+          ]
+        },
+        {
+          "id": "s1_8",
+          "text": "saw",
+          "alignments": [
+            "t1_7"
+          ]
+        },
+        {
+          "id": "s1_9",
+          "text": "a",
+          "alignments": [
+            "t1_18"
+          ]
+        },
+        {
+          "id": "s1_10",
+          "text": "magnificent",
+          "alignments": [
+            "t1_17"
+          ]
+        },
+        {
+          "id": "s1_11",
+          "text": "picture",
+          "alignments": [
+            "t1_18"
+          ]
+        },
+        {
+          "id": "s1_12",
+          "text": "in",
+          "alignments": [
+            "t1_8"
+          ]
+        },
+        {
+          "id": "s1_13",
+          "text": "a",
+          "alignments": [
+            "t1_9"
+          ]
+        },
+        {
+          "id": "s1_14",
+          "text": "book",
+          "alignments": [
+            "t1_9"
+          ]
+        },
+        {
+          "id": "s1_15",
+          "text": ",",
+          "alignments": []
+        },
+        {
+          "id": "s1_16",
+          "text": "called",
+          "alignments": [
+            "t1_10"
+          ]
+        },
+        {
+          "id": "s1_17",
+          "text": "True",
+          "alignments": [
+            "t1_16"
+          ]
+        },
+        {
+          "id": "s1_18",
+          "text": "Stories",
+          "alignments": [
+            "t1_11"
+          ]
+        },
+        {
+          "id": "s1_19",
+          "text": "from",
+          "alignments": [
+            "t1_12"
+          ]
+        },
+        {
+          "id": "s1_20",
+          "text": "Nature",
+          "alignments": [
+            "t1_13"
+          ]
+        },
+        {
+          "id": "s1_21",
+          "text": ",",
+          "alignments": []
+        },
+        {
+          "id": "s1_22",
+          "text": "about",
+          "alignments": [
+            "t1_14",
+            "t1_15"
+          ]
+        },
+        {
+          "id": "s1_23",
+          "text": "the",
+          "alignments": [
+            "t1_19"
+          ]
+        },
+        {
+          "id": "s1_24",
+          "text": "primeval",
+          "alignments": [
+            "t1_20"
+          ]
+        },
+        {
+          "id": "s1_25",
+          "text": "forest",
+          "alignments": [
+            "t1_21"
+          ]
+        },
+        {
+          "id": "s1_26",
+          "text": ".",
+          "alignments": [
+            "t1_22"
+          ]
+        }
+      ],
+      "target": [
+        {
+          "id": "t1_0",
+          "text": "Когда",
+          "alignments": [
+            "s1_1",
+            "s1_0"
+          ]
+        },
+        {
+          "id": "t1_1",
+          "text": "мне",
+          "alignments": [
+            "s1_2"
+          ]
+        },
+        {
+          "id": "t1_2",
+          "text": "было",
+          "alignments": [
+            "s1_3"
+          ]
+        },
+        {
+          "id": "t1_3",
+          "text": "шесть",
+          "alignments": [
+            "s1_4"
+          ]
+        },
+        {
+          "id": "t1_4",
+          "text": "лет",
+          "alignments": [
+            "s1_5",
+            "s1_6"
+          ]
+        },
+        {
+          "id": "t1_5",
+          "text": ",",
+          "alignments": []
+        },
+        {
+          "id": "t1_6",
+          "text": "я",
+          "alignments": [
+            "s1_7"
+          ]
+        },
+        {
+          "id": "t1_7",
+          "text": "увидел",
+          "alignments": [
+            "s1_8"
+          ]
+        },
+        {
+          "id": "t1_8",
+          "text": "в",
+          "alignments": [
+            "s1_12"
+          ]
+        },
+        {
+          "id": "t1_9",
+          "text": "книге",
+          "alignments": [
+            "s1_13",
+            "s1_14"
+          ]
+        },
+        {
+          "id": "t1_10",
+          "text": "«",
+          "alignments": [
+            "s1_16"
+          ]
+        },
+        {
+          "id": "t1_11",
+          "text": "Правдивые",
+          "alignments": [
+            "s1_18"
+          ]
+        },
+        {
+          "id": "t1_12",
+          "text": "истории",
+          "alignments": [
+            "s1_19"
+          ]
+        },
+        {
+          "id": "t1_13",
+          "text": "из",
+          "alignments": [
+            "s1_20"
+          ]
+        },
+        {
+          "id": "t1_14",
+          "text": "жизни",
+          "alignments": [
+            "s1_22"
+          ]
+        },
+        {
+          "id": "t1_15",
+          "text": "природы",
+          "alignments": [
+            "s1_22"
+          ]
+        },
+        {
+          "id": "t1_16",
+          "text": "»",
+          "alignments": [
+            "s1_17"
+          ]
+        },
+        {
+          "id": "t1_17",
+          "text": "великолепную",
+          "alignments": [
+            "s1_10"
+          ]
+        },
+        {
+          "id": "t1_18",
+          "text": "картинку",
+          "alignments": [
+            "s1_9",
+            "s1_11"
+          ]
+        },
+        {
+          "id": "t1_19",
+          "text": "о",
+          "alignments": [
+            "s1_23"
+          ]
+        },
+        {
+          "id": "t1_20",
+          "text": "первобытном",
+          "alignments": [
+            "s1_24"
+          ]
+        },
+        {
+          "id": "t1_21",
+          "text": "лесу",
+          "alignments": [
+            "s1_25"
+          ]
+        },
+        {
+          "id": "t1_22",
+          "text": ".",
+          "alignments": [
+            "s1_26"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seg_2",
+      "source": [
+        {
+          "id": "s2_0",
+          "text": "It",
+          "alignments": [
+            "t2_13"
+          ]
+        },
+        {
+          "id": "s2_1",
+          "text": "was",
+          "alignments": [
+            "t2_0"
+          ]
+        },
+        {
+          "id": "s2_2",
+          "text": "a",
+          "alignments": [
+            "t2_0"
+          ]
+        },
+        {
+          "id": "s2_3",
+          "text": "picture",
+          "alignments": [
+            "t2_0"
+          ]
+        },
+        {
+          "id": "s2_4",
+          "text": "of",
+          "alignments": [
+            "t2_0"
+          ]
+        },
+        {
+          "id": "s2_5",
+          "text": "a",
+          "alignments": [
+            "t2_4"
+          ]
+        },
+        {
+          "id": "s2_6",
+          "text": "boa",
+          "alignments": [
+            "t2_4"
+          ]
+        },
+        {
+          "id": "s2_7",
+          "text": "constrictor",
+          "alignments": [
+            "t2_4"
+          ]
+        },
+        {
+          "id": "s2_8",
+          "text": "in",
+          "alignments": [
+            "t2_6"
+          ]
+        },
+        {
+          "id": "s2_9",
+          "text": "the",
+          "alignments": [
+            "t2_6"
+          ]
+        },
+        {
+          "id": "s2_10",
+          "text": "act",
+          "alignments": [
+            "t2_6"
+          ]
+        },
+        {
+          "id": "s2_11",
+          "text": "of",
+          "alignments": [
+            "t2_6"
+          ]
+        },
+        {
+          "id": "s2_12",
+          "text": "swallowing",
+          "alignments": [
+            "t2_6"
+          ]
+        },
+        {
+          "id": "s2_13",
+          "text": "an",
+          "alignments": [
+            "t2_7"
+          ]
+        },
+        {
+          "id": "s2_14",
+          "text": "animal",
+          "alignments": [
+            "t2_7"
+          ]
+        },
+        {
+          "id": "s2_15",
+          "text": ".",
+          "alignments": [
+            "t2_8"
+          ]
+        },
+        {
+          "id": "s2_16",
+          "text": "Here",
+          "alignments": [
+            "t2_9"
+          ]
+        },
+        {
+          "id": "s2_17",
+          "text": "is",
+          "alignments": [
+            "t2_9"
+          ]
+        },
+        {
+          "id": "s2_18",
+          "text": "a",
+          "alignments": [
+            "t2_10"
+          ]
+        },
+        {
+          "id": "s2_19",
+          "text": "copy",
+          "alignments": [
+            "t2_10"
+          ]
+        },
+        {
+          "id": "s2_20",
+          "text": "of",
+          "alignments": [
+            "t2_11"
+          ]
+        },
+        {
+          "id": "s2_21",
+          "text": "the",
+          "alignments": [
+            "t2_11"
+          ]
+        },
+        {
+          "id": "s2_22",
+          "text": "drawing",
+          "alignments": [
+            "t2_11"
+          ]
+        },
+        {
+          "id": "s2_23",
+          "text": ".",
+          "alignments": [
+            "t2_12"
+          ]
+        }
+      ],
+      "target": [
+        {
+          "id": "t2_0",
+          "text": "На",
+          "alignments": [
+            "s2_1",
+            "s2_2",
+            "s2_3",
+            "s2_4"
+          ]
+        },
+        {
+          "id": "t2_1",
+          "text": "ней",
+          "alignments": []
+        },
+        {
+          "id": "t2_2",
+          "text": "был",
+          "alignments": []
+        },
+        {
+          "id": "t2_3",
+          "text": "изображен",
+          "alignments": []
+        },
+        {
+          "id": "t2_4",
+          "text": "удав",
+          "alignments": [
+            "s2_5",
+            "s2_6",
+            "s2_7"
+          ]
+        },
+        {
+          "id": "t2_5",
+          "text": ",",
+          "alignments": []
+        },
+        {
+          "id": "t2_6",
+          "text": "проглатывающий",
+          "alignments": [
+            "s2_8",
+            "s2_9",
+            "s2_10",
+            "s2_11",
+            "s2_12"
+          ]
+        },
+        {
+          "id": "t2_7",
+          "text": "животное",
+          "alignments": [
+            "s2_13",
+            "s2_14"
+          ]
+        },
+        {
+          "id": "t2_8",
+          "text": ".",
+          "alignments": [
+            "s2_15"
+          ]
+        },
+        {
+          "id": "t2_9",
+          "text": "Вот",
+          "alignments": [
+            "s2_16",
+            "s2_17"
+          ]
+        },
+        {
+          "id": "t2_10",
+          "text": "копия",
+          "alignments": [
+            "s2_18",
+            "s2_19"
+          ]
+        },
+        {
+          "id": "t2_11",
+          "text": "этой",
+          "alignments": [
+            "s2_20",
+            "s2_21",
+            "s2_22"
+          ]
+        },
+        {
+          "id": "t2_12",
+          "text": "картинки",
+          "alignments": [
+            "s2_23"
+          ]
+        },
+        {
+          "id": "t2_13",
+          "text": ".",
+          "alignments": [
+            "s2_0"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bilingual Text Alignment Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        #app {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .viewer-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .viewer-header h1 {
+            font-size: 28px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .language-labels {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 15px;
+        }
+
+        .lang-label {
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .viewer-content {
+            display: flex;
+            min-height: 600px;
+            position: relative;
+        }
+
+        .text-panel {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            max-height: 700px;
+        }
+
+        .source-panel {
+            background: #f8f9fa;
+        }
+
+        .target-panel {
+            background: #ffffff;
+        }
+
+        .divider {
+            width: 2px;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+            flex-shrink: 0;
+        }
+
+        .segment {
+            margin-bottom: 24px;
+            line-height: 2;
+            font-size: 18px;
+            color: #2d3748;
+        }
+
+        .lexeme {
+            cursor: pointer;
+            padding: 4px 2px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            display: inline-block;
+            position: relative;
+        }
+
+        .lexeme:hover {
+            background: #ffd70020;
+            transform: translateY(-1px);
+        }
+
+        .lexeme.hover {
+            background: #ffd70030;
+        }
+
+        .lexeme.selected {
+            background: #ffd700;
+            color: #2d3748;
+            font-weight: 600;
+            padding: 4px 8px;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+            transform: scale(1.05);
+        }
+
+        .lexeme.highlighted {
+            background: #90cdf4;
+            color: #1a365d;
+            font-weight: 500;
+            padding: 4px 8px;
+            box-shadow: 0 2px 8px rgba(144, 205, 244, 0.4);
+        }
+
+        /* File picker section */
+        .file-picker-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+            padding: 40px;
+        }
+
+        .file-picker-section.hidden {
+            display: none;
+        }
+
+        .file-picker-container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .file-picker-container h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .file-picker-container p {
+            color: #718096;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .file-input-label:active {
+            transform: translateY(0);
+        }
+
+        #fileInputViewer {
+            display: none;
+        }
+
+        .selected-file-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f7fafc;
+            border-radius: 6px;
+            color: #2d3748;
+            font-size: 14px;
+            display: none;
+        }
+
+        .selected-file-info.visible {
+            display: block;
+        }
+
+        .selected-file-info strong {
+            color: #667eea;
+        }
+
+        .demo-link {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .demo-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .demo-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Loading state */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+            font-size: 20px;
+            color: #667eea;
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error-message.visible {
+            display: block;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .viewer-content {
+                flex-direction: column;
+            }
+
+            .divider {
+                height: 2px;
+                width: 100%;
+            }
+
+            .text-panel {
+                padding: 20px;
+                max-height: none;
+            }
+
+            .language-labels {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .file-picker-container {
+                padding: 30px 20px;
+            }
+        }
+
+        /* Scrollbar styling */
+        .text-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .text-panel::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .text-panel::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 4px;
+        }
+
+        .text-panel::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+        .alignment-tooltip {
+            background: #2d3748;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .alignment-tooltip strong {
+            color: #90cdf4;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <!-- File Picker Section -->
+        <div id="filePickerSection" class="file-picker-section">
+            <div class="file-picker-container">
+                <h2>📖 Load Alignment File</h2>
+                <p>Select a JSON file containing your bilingual text alignment data to view the interactive alignment.
+                </p>
+
+                <div class="file-input-wrapper">
+                    <label for="fileInputViewer" class="file-input-label">
+                        📁 Choose JSON File
+                    </label>
+                    <input type="file" id="fileInputViewer" accept=".json,application/json">
+                </div>
+
+                <div id="selectedFileInfo" class="selected-file-info">
+                    <strong>Selected:</strong> <span id="fileName"></span>
+                </div>
+
+                <div id="errorMessage" class="error-message">
+                    <strong>Error:</strong> <span id="errorText"></span>
+                </div>
+
+                <div class="demo-link">
+                    <p style="color: #718096; margin-bottom: 10px;">Don't have a file?</p>
+                    <a href="#" id="loadDemoBtn">Load demo data instead</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Viewer Section (initially hidden) -->
+        <div id="viewerSection" style="display: none;">
+            <div class="viewer-header">
+                <h1 id="viewerTitle">Bilingual Text Alignment</h1>
+                <div class="language-labels">
+                    <div class="lang-label source-label" id="sourceLangLabel">SOURCE</div>
+                    <div class="lang-label target-label" id="targetLangLabel">TARGET</div>
+                </div>
+            </div>
+
+            <div class="viewer-content">
+                <div class="text-panel source-panel" id="sourcePanel"></div>
+                <div class="divider"></div>
+                <div class="text-panel target-panel" id="targetPanel"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="BilingualTextMapper.js"></script>
+    <script src="TextViewer.js"></script>
+    <script>
+        let mapper = null;
+        let viewer = null;
+
+        // Demo data (sample alignment)
+        const demoData = {
+            "metadata": {
+                "sourceLanguage": "en",
+                "targetLanguage": "es",
+                "title": "The Little Prince - Chapter 1 (Excerpt)",
+                "author": "Antoine de Saint-Exupéry"
+            },
+            "segments": [
+                {
+                    "id": "seg_1",
+                    "source": [
+                        { "id": "s1_0", "text": "Once", "alignments": ["t1_0"] },
+                        { "id": "s1_1", "text": "when", "alignments": ["t1_1"] },
+                        { "id": "s1_2", "text": "I", "alignments": ["t1_2"] },
+                        { "id": "s1_3", "text": "was", "alignments": ["t1_3"] },
+                        { "id": "s1_4", "text": "six", "alignments": ["t1_4"] },
+                        { "id": "s1_5", "text": "years", "alignments": ["t1_5"] },
+                        { "id": "s1_6", "text": "old", "alignments": ["t1_6"] }
+                    ],
+                    "target": [
+                        { "id": "t1_0", "text": "Una", "alignments": ["s1_0"] },
+                        { "id": "t1_1", "text": "vez", "alignments": ["s1_1"] },
+                        { "id": "t1_2", "text": "yo", "alignments": ["s1_2"] },
+                        { "id": "t1_3", "text": "tenía", "alignments": ["s1_3"] },
+                        { "id": "t1_4", "text": "seis", "alignments": ["s1_4"] },
+                        { "id": "t1_5", "text": "años", "alignments": ["s1_5"] },
+                        { "id": "t1_6", "text": "de edad", "alignments": ["s1_6"] }
+                    ]
+                },
+                {
+                    "id": "seg_2",
+                    "source": [
+                        { "id": "s2_0", "text": "I", "alignments": ["t2_0"] },
+                        { "id": "s2_1", "text": "saw", "alignments": ["t2_0"] },
+                        { "id": "s2_2", "text": "a", "alignments": ["t2_1"] },
+                        { "id": "s2_3", "text": "magnificent", "alignments": ["t2_2"] },
+                        { "id": "s2_4", "text": "picture", "alignments": ["t2_3"] }
+                    ],
+                    "target": [
+                        { "id": "t2_0", "text": "Vi", "alignments": ["s2_0", "s2_1"] },
+                        { "id": "t2_1", "text": "una", "alignments": ["s2_2"] },
+                        { "id": "t2_2", "text": "magnífica", "alignments": ["s2_3"] },
+                        { "id": "t2_3", "text": "ilustración", "alignments": ["s2_4"] }
+                    ]
+                }
+            ]
+        };
+
+        // Initialize the viewer with data
+        function initializeViewer(data) {
+            try {
+                // Validate data structure
+                if (!data.metadata || !data.segments) {
+                    throw new Error('Invalid JSON structure. Must contain "metadata" and "segments".');
+                }
+
+                // Update title
+                document.getElementById('viewerTitle').textContent = data.metadata.title || 'Bilingual Text Alignment';
+                document.getElementById('sourceLangLabel').textContent = (data.metadata.sourceLanguage || 'SOURCE').toUpperCase();
+                document.getElementById('targetLangLabel').textContent = (data.metadata.targetLanguage || 'TARGET').toUpperCase();
+
+                // Initialize mapper and viewer
+                mapper = new BilingualTextMapper(data);
+
+                // Clear previous content
+                document.getElementById('sourcePanel').innerHTML = '';
+                document.getElementById('targetPanel').innerHTML = '';
+
+                // Render content
+                renderContent();
+
+                // Hide file picker, show viewer
+                document.getElementById('filePickerSection').classList.add('hidden');
+                document.getElementById('viewerSection').style.display = 'block';
+
+                console.log('Viewer initialized successfully!');
+            } catch (error) {
+                showError(error.message);
+                throw error;
+            }
+        }
+
+        // Render the alignment content
+        function renderContent() {
+            const segments = mapper.getSegments();
+            const sourcePanel = document.getElementById('sourcePanel');
+            const targetPanel = document.getElementById('targetPanel');
+
+            segments.forEach(segment => {
+                // Render source segment
+                const sourcePara = document.createElement('p');
+                sourcePara.className = 'segment';
+                segment.source.forEach(lexeme => {
+                    const span = createLexemeElement(lexeme);
+                    sourcePara.appendChild(span);
+                    sourcePara.appendChild(document.createTextNode(' '));
+                });
+                sourcePanel.appendChild(sourcePara);
+
+                // Render target segment
+                const targetPara = document.createElement('p');
+                targetPara.className = 'segment';
+                segment.target.forEach(lexeme => {
+                    const span = createLexemeElement(lexeme);
+                    targetPara.appendChild(span);
+                    targetPara.appendChild(document.createTextNode(' '));
+                });
+                targetPanel.appendChild(targetPara);
+            });
+
+            // Add click handlers
+            attachClickHandlers();
+        }
+
+        // Create lexeme element
+        function createLexemeElement(lexeme) {
+            const span = document.createElement('span');
+            span.className = 'lexeme';
+            span.id = lexeme.id;
+            span.textContent = lexeme.text;
+            return span;
+        }
+
+        // Attach click handlers to all lexemes
+        function attachClickHandlers() {
+            const lexemes = document.querySelectorAll('.lexeme');
+
+            lexemes.forEach(lexeme => {
+                lexeme.addEventListener('click', (e) => {
+                    const lexemeId = e.target.id;
+                    mapper.highlightAlignment(lexemeId);
+                });
+
+                lexeme.addEventListener('mouseenter', (e) => {
+                    e.target.classList.add('hover');
+                });
+
+                lexeme.addEventListener('mouseleave', (e) => {
+                    e.target.classList.remove('hover');
+                });
+            });
+
+            // Click outside to clear highlights
+            document.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('lexeme')) {
+                    mapper.clearHighlights();
+                }
+            });
+        }
+
+        // Handle file selection
+        document.getElementById('fileInputViewer').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Show selected file name
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('selectedFileInfo').classList.add('visible');
+            hideError();
+
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    initializeViewer(data);
+                } catch (error) {
+                    showError(`Failed to parse JSON file: ${error.message}`);
+                    console.error('Error loading file:', error);
+                }
+            };
+
+            reader.onerror = () => {
+                showError('Failed to read file. Please try again.');
+            };
+
+            reader.readAsText(file);
+        });
+
+        // Load demo data
+        document.getElementById('loadDemoBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            hideError();
+            initializeViewer(demoData);
+        });
+
+        // Error handling
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMessage').classList.add('visible');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.remove('visible');
+        }
+
+        // Optional: Auto-load if JSON file is provided via URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const jsonUrl = urlParams.get('json');
+        if (jsonUrl) {
+            fetch(jsonUrl)
+                .then(response => response.json())
+                .then(data => initializeViewer(data))
+                .catch(error => {
+                    console.error('Error loading JSON from URL:', error);
+                    showError('Failed to load JSON from URL parameter.');
+                });
+        }
+    </script>
+</body>
+
+</html>
