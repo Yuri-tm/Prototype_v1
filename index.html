@@ -4,7 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bilingual Text Alignment Viewer</title>
+    <title>Bilingual Text Alignment Viewer with TTS</title>
+
+    <!-- Puter.js for enhanced TTS (optional fallback) -->
+    <script src="https://js.puter.com/v2/"></script>
+
     <style>
         * {
             margin: 0;
@@ -33,12 +37,117 @@
             color: white;
             padding: 30px;
             text-align: center;
+            position: relative;
         }
 
         .viewer-header h1 {
             font-size: 28px;
             margin-bottom: 15px;
             font-weight: 600;
+        }
+
+        /* TTS Controls */
+        .tts-controls {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .tts-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tts-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .tts-button:active {
+            transform: translateY(0);
+        }
+
+        .tts-button.playing {
+            background: #27ae60;
+            border-color: #27ae60;
+            animation: pulse 1.5s infinite;
+        }
+
+        .tts-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .tts-settings {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .tts-settings.visible {
+            display: block;
+        }
+
+        .tts-setting-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .tts-setting-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .tts-setting-row label {
+            min-width: 80px;
+            font-size: 14px;
+        }
+
+        .tts-setting-row select,
+        .tts-setting-row input[type="range"] {
+            flex: 1;
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .tts-setting-row select {
+            cursor: pointer;
+        }
+
+        .tts-setting-row select option {
+            background: #667eea;
+            color: white;
         }
 
         .language-labels {
@@ -55,6 +164,11 @@
             font-weight: 600;
             font-size: 14px;
             letter-spacing: 1px;
+        }
+
+        .lang-label.reading {
+            background: #27ae60;
+            animation: pulse 1.5s infinite;
         }
 
         .viewer-content {
@@ -105,10 +219,6 @@
             transform: translateY(-1px);
         }
 
-        .lexeme.hover {
-            background: #ffd70030;
-        }
-
         .lexeme.selected {
             background: #ffd700;
             color: #2d3748;
@@ -126,7 +236,27 @@
             box-shadow: 0 2px 8px rgba(144, 205, 244, 0.4);
         }
 
-        /* File picker section */
+        .lexeme.speaking {
+            background: #48bb78;
+            color: white;
+            font-weight: 600;
+            padding: 4px 8px;
+            animation: speaking-pulse 0.5s infinite alternate;
+        }
+
+        @keyframes speaking-pulse {
+            from {
+                transform: scale(1);
+                box-shadow: 0 2px 8px rgba(72, 187, 120, 0.4);
+            }
+
+            to {
+                transform: scale(1.08);
+                box-shadow: 0 4px 12px rgba(72, 187, 120, 0.6);
+            }
+        }
+
+        /* File picker styles */
         .file-picker-section {
             display: flex;
             flex-direction: column;
@@ -161,11 +291,6 @@
             line-height: 1.6;
         }
 
-        .file-input-wrapper {
-            position: relative;
-            margin-bottom: 20px;
-        }
-
         .file-input-label {
             display: inline-block;
             padding: 15px 40px;
@@ -181,10 +306,6 @@
         .file-input-label:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .file-input-label:active {
-            transform: translateY(0);
         }
 
         #fileInputViewer {
@@ -205,10 +326,6 @@
             display: block;
         }
 
-        .selected-file-info strong {
-            color: #667eea;
-        }
-
         .demo-link {
             margin-top: 20px;
             padding-top: 20px;
@@ -219,20 +336,6 @@
             color: #667eea;
             text-decoration: none;
             font-weight: 600;
-        }
-
-        .demo-link a:hover {
-            text-decoration: underline;
-        }
-
-        /* Loading state */
-        .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 400px;
-            font-size: 20px;
-            color: #667eea;
         }
 
         .error-message {
@@ -248,7 +351,6 @@
             display: block;
         }
 
-        /* Responsive design */
         @media (max-width: 768px) {
             .viewer-content {
                 flex-direction: column;
@@ -264,17 +366,13 @@
                 max-height: none;
             }
 
-            .language-labels {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .file-picker-container {
-                padding: 30px 20px;
+            .tts-controls {
+                position: static;
+                justify-content: center;
+                margin-top: 15px;
             }
         }
 
-        /* Scrollbar styling */
         .text-panel::-webkit-scrollbar {
             width: 8px;
         }
@@ -287,24 +385,6 @@
             background: #667eea;
             border-radius: 4px;
         }
-
-        .text-panel::-webkit-scrollbar-thumb:hover {
-            background: #764ba2;
-        }
-        .alignment-tooltip {
-            background: #2d3748;
-            color: white;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-            pointer-events: none;
-        }
-
-        .alignment-tooltip strong {
-            color: #90cdf4;
-        }
     </style>
 </head>
 
@@ -314,8 +394,7 @@
         <div id="filePickerSection" class="file-picker-section">
             <div class="file-picker-container">
                 <h2>📖 Load Alignment File</h2>
-                <p>Select a JSON file containing your bilingual text alignment data to view the interactive alignment.
-                </p>
+                <p>Select a JSON file containing your bilingual text alignment data.</p>
 
                 <div class="file-input-wrapper">
                     <label for="fileInputViewer" class="file-input-label">
@@ -339,12 +418,40 @@
             </div>
         </div>
 
-        <!-- Viewer Section (initially hidden) -->
+        <!-- Viewer Section -->
         <div id="viewerSection" style="display: none;">
             <div class="viewer-header">
                 <h1 id="viewerTitle">Bilingual Text Alignment</h1>
+
+                <!-- TTS Controls -->
+                <div class="tts-controls">
+                    <button id="ttsPlayPause" class="tts-button">
+                        <span id="ttsIcon">▶️</span>
+                        <span id="ttsText">Play</span>
+                    </button>
+                    <button id="ttsSettings" class="tts-button">⚙️</button>
+                </div>
+
+                <!-- TTS Settings Panel -->
+                <div id="ttsSettingsPanel" class="tts-settings">
+                    <div class="tts-setting-row">
+                        <label>Voice:</label>
+                        <select id="voiceSelect"></select>
+                    </div>
+                    <div class="tts-setting-row">
+                        <label>Speed:</label>
+                        <input type="range" id="speedRange" min="0.5" max="2" step="0.1" value="1">
+                        <span id="speedValue">1.0x</span>
+                    </div>
+                    <div class="tts-setting-row">
+                        <label>Pitch:</label>
+                        <input type="range" id="pitchRange" min="0.5" max="2" step="0.1" value="1">
+                        <span id="pitchValue">1.0</span>
+                    </div>
+                </div>
+
                 <div class="language-labels">
-                    <div class="lang-label source-label" id="sourceLangLabel">SOURCE</div>
+                    <div class="lang-label source-label" id="sourceLangLabel">SOURCE 🔊</div>
                     <div class="lang-label target-label" id="targetLangLabel">TARGET</div>
                 </div>
             </div>
@@ -361,14 +468,14 @@
     <script src="TextViewer.js"></script>
     <script>
         let mapper = null;
-        let viewer = null;
+        let ttsManager = null;
 
-        // Demo data (sample alignment)
+        // Demo data
         const demoData = {
             "metadata": {
                 "sourceLanguage": "en",
                 "targetLanguage": "es",
-                "title": "The Little Prince - Chapter 1 (Excerpt)",
+                "title": "The Little Prince - Demo",
                 "author": "Antoine de Saint-Exupéry"
             },
             "segments": [
@@ -376,21 +483,22 @@
                     "id": "seg_1",
                     "source": [
                         { "id": "s1_0", "text": "Once", "alignments": ["t1_0"] },
-                        { "id": "s1_1", "text": "when", "alignments": ["t1_1"] },
-                        { "id": "s1_2", "text": "I", "alignments": ["t1_2"] },
-                        { "id": "s1_3", "text": "was", "alignments": ["t1_3"] },
-                        { "id": "s1_4", "text": "six", "alignments": ["t1_4"] },
-                        { "id": "s1_5", "text": "years", "alignments": ["t1_5"] },
-                        { "id": "s1_6", "text": "old", "alignments": ["t1_6"] }
+                        { "id": "s1_1", "text": "upon", "alignments": ["t1_1"] },
+                        { "id": "s1_2", "text": "a", "alignments": [] },
+                        { "id": "s1_3", "text": "time", "alignments": ["t1_1"] },
+                        { "id": "s1_4", "text": "I", "alignments": ["t1_2"] },
+                        { "id": "s1_5", "text": "was", "alignments": ["t1_3"] },
+                        { "id": "s1_6", "text": "six", "alignments": ["t1_4"] },
+                        { "id": "s1_7", "text": "years", "alignments": ["t1_5"] },
+                        { "id": "s1_8", "text": "old", "alignments": [] }
                     ],
                     "target": [
                         { "id": "t1_0", "text": "Una", "alignments": ["s1_0"] },
-                        { "id": "t1_1", "text": "vez", "alignments": ["s1_1"] },
-                        { "id": "t1_2", "text": "yo", "alignments": ["s1_2"] },
-                        { "id": "t1_3", "text": "tenía", "alignments": ["s1_3"] },
-                        { "id": "t1_4", "text": "seis", "alignments": ["s1_4"] },
-                        { "id": "t1_5", "text": "años", "alignments": ["s1_5"] },
-                        { "id": "t1_6", "text": "de edad", "alignments": ["s1_6"] }
+                        { "id": "t1_1", "text": "vez", "alignments": ["s1_1", "s1_3"] },
+                        { "id": "t1_2", "text": "yo", "alignments": ["s1_4"] },
+                        { "id": "t1_3", "text": "tenía", "alignments": ["s1_5"] },
+                        { "id": "t1_4", "text": "seis", "alignments": ["s1_6"] },
+                        { "id": "t1_5", "text": "años", "alignments": ["s1_7"] }
                     ]
                 },
                 {
@@ -412,48 +520,325 @@
             ]
         };
 
-        // Initialize the viewer with data
+        // Language code mapping for TTS
+        const LANGUAGE_CODES = {
+            'en': 'en-US',
+            'es': 'es-ES',
+            'fr': 'fr-FR',
+            'de': 'de-DE',
+            'it': 'it-IT',
+            'pt': 'pt-PT',
+            'ru': 'ru-RU',
+            'zh': 'zh-CN',
+            'ja': 'ja-JP',
+            'ko': 'ko-KR',
+            'ar': 'ar-SA',
+            'hi': 'hi-IN'
+        };
+
+        // TTS Manager Class - Reads SOURCE language only
+        class TTSManager {
+            constructor(data) {
+                this.data = data;
+                this.isPlaying = false;
+                this.isPaused = false;
+                this.currentSegmentIndex = 0;
+                this.voices = [];
+                this.selectedVoice = null;
+                this.rate = 1.0;
+                this.pitch = 1.0;
+                this.sourceLanguage = data.metadata.sourceLanguage || 'en';
+                this.sourceLangCode = LANGUAGE_CODES[this.sourceLanguage] || 'en-US';
+
+                this.initVoices();
+                this.setupControls();
+            }
+
+            initVoices() {
+                if ('speechSynthesis' in window) {
+                    // Load voices
+                    const loadVoices = () => {
+                        this.voices = speechSynthesis.getVoices();
+                        this.populateVoiceList();
+                    };
+
+                    loadVoices();
+
+                    // Chrome loads voices asynchronously
+                    if (speechSynthesis.onvoiceschanged !== undefined) {
+                        speechSynthesis.onvoiceschanged = loadVoices;
+                    }
+                } else {
+                    console.warn('Browser does not support Web Speech API');
+                    alert('Your browser does not support text-to-speech. Please use Chrome, Edge, or Safari.');
+                }
+            }
+
+            populateVoiceList() {
+                const voiceSelect = document.getElementById('voiceSelect');
+                voiceSelect.innerHTML = '';
+
+                // Filter voices for SOURCE language only
+                const languageVoices = this.voices.filter(voice =>
+                    voice.lang.startsWith(this.sourceLanguage) ||
+                    voice.lang.startsWith(this.sourceLangCode)
+                );
+
+                if (languageVoices.length === 0) {
+                    // Fallback: try to find any English voice if source is English
+                    const fallbackVoices = this.voices.filter(v => v.lang.startsWith('en'));
+                    languageVoices.push(...fallbackVoices);
+                }
+
+                languageVoices.forEach((voice, index) => {
+                    const option = document.createElement('option');
+                    option.value = voice.name;
+                    option.textContent = `${voice.name} (${voice.lang})`;
+                    if (voice.default) {
+                        option.selected = true;
+                    }
+                    voiceSelect.appendChild(option);
+                });
+
+                if (languageVoices.length > 0) {
+                    this.selectedVoice = languageVoices[0];
+                    console.log(`TTS initialized for ${this.sourceLanguage.toUpperCase()} with ${languageVoices.length} voice(s)`);
+                } else {
+                    console.warn(`No voices found for language: ${this.sourceLanguage}`);
+                    // Use first available voice as fallback
+                    this.selectedVoice = this.voices[0];
+                }
+            }
+
+            setupControls() {
+                const playPauseBtn = document.getElementById('ttsPlayPause');
+
+                // Play/Pause button
+                playPauseBtn.addEventListener('click', () => {
+                    this.togglePlayPause();
+                });
+
+                // Settings button
+                document.getElementById('ttsSettings').addEventListener('click', () => {
+                    const panel = document.getElementById('ttsSettingsPanel');
+                    panel.classList.toggle('visible');
+                });
+
+                // Voice selection
+                document.getElementById('voiceSelect').addEventListener('change', (e) => {
+                    this.selectedVoice = this.voices.find(v => v.name === e.target.value);
+                    console.log('Voice changed to:', this.selectedVoice.name);
+                });
+
+                // Speed control
+                document.getElementById('speedRange').addEventListener('input', (e) => {
+                    this.rate = parseFloat(e.target.value);
+                    document.getElementById('speedValue').textContent = this.rate.toFixed(1) + 'x';
+                });
+
+                // Pitch control
+                document.getElementById('pitchRange').addEventListener('input', (e) => {
+                    this.pitch = parseFloat(e.target.value);
+                    document.getElementById('pitchValue').textContent = this.pitch.toFixed(1);
+                });
+            }
+
+            togglePlayPause() {
+                if (this.isPlaying) {
+                    this.pause();
+                } else {
+                    this.play();
+                }
+            }
+
+            play() {
+                this.isPlaying = true;
+                this.updatePlayButton(true);
+
+                // Add visual indicator to source language label
+                document.getElementById('sourceLangLabel').classList.add('reading');
+
+                if (this.isPaused) {
+                    this.isPaused = false;
+                    speechSynthesis.resume();
+                } else {
+                    this.speakSourceText();
+                }
+            }
+
+            pause() {
+                this.isPlaying = false;
+                this.isPaused = true;
+                this.updatePlayButton(false);
+                document.getElementById('sourceLangLabel').classList.remove('reading');
+                speechSynthesis.pause();
+            }
+
+            stop() {
+                this.isPlaying = false;
+                this.isPaused = false;
+                this.currentSegmentIndex = 0;
+                this.updatePlayButton(false);
+                this.clearHighlights();
+                document.getElementById('sourceLangLabel').classList.remove('reading');
+                speechSynthesis.cancel();
+            }
+
+            async speakSourceText() {
+                const segments = this.data.segments;
+
+                for (let i = this.currentSegmentIndex; i < segments.length; i++) {
+                    if (!this.isPlaying) break;
+
+                    this.currentSegmentIndex = i;
+                    const segment = segments[i];
+                    const sourceWords = segment.source;
+
+                    // Collect SOURCE text for the segment
+                    const segmentText = sourceWords.map(w => w.text).join(' ');
+
+                    await this.speakWithWebAPI(segmentText, sourceWords);
+
+                    // Small pause between segments
+                    if (this.isPlaying) {
+                        await this.sleep(300);
+                    }
+                }
+
+                // Finished speaking all segments
+                this.stop();
+            }
+
+            speakWithWebAPI(text, words) {
+                return new Promise((resolve) => {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.voice = this.selectedVoice;
+                    utterance.rate = this.rate;
+                    utterance.pitch = this.pitch;
+                    utterance.lang = this.sourceLangCode;
+
+                    let wordIndex = 0;
+
+                    // Highlight words as they're spoken
+                    utterance.onboundary = (event) => {
+                        if (event.name === 'word') {
+                            // Clear previous highlight
+                            this.clearHighlights();
+
+                            // Highlight current word
+                            if (wordIndex < words.length) {
+                                const currentWord = words[wordIndex];
+                                this.highlightWord(currentWord.id);
+
+                                // Also highlight aligned target words
+                                if (currentWord.alignments && currentWord.alignments.length > 0) {
+                                    currentWord.alignments.forEach(targetId => {
+                                        const targetElement = document.getElementById(targetId);
+                                        if (targetElement) {
+                                            targetElement.classList.add('highlighted');
+                                        }
+                                    });
+                                }
+
+                                wordIndex++;
+                            }
+                        }
+                    };
+
+                    utterance.onend = () => {
+                        this.clearHighlights();
+                        resolve();
+                    };
+
+                    utterance.onerror = (event) => {
+                        console.error('Speech synthesis error:', event);
+                        this.clearHighlights();
+                        resolve();
+                    };
+
+                    speechSynthesis.speak(utterance);
+                });
+            }
+
+            highlightWord(wordId) {
+                const wordElement = document.getElementById(wordId);
+                if (wordElement) {
+                    wordElement.classList.add('speaking');
+
+                    // Scroll into view if needed
+                    wordElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                        inline: 'nearest'
+                    });
+                }
+            }
+
+            clearHighlights() {
+                document.querySelectorAll('.speaking, .highlighted').forEach(el => {
+                    el.classList.remove('speaking', 'highlighted');
+                });
+            }
+
+            updatePlayButton(playing) {
+                const button = document.getElementById('ttsPlayPause');
+                const icon = document.getElementById('ttsIcon');
+                const text = document.getElementById('ttsText');
+
+                if (playing) {
+                    button.classList.add('playing');
+                    icon.textContent = '⏸️';
+                    text.textContent = 'Pause';
+                } else {
+                    button.classList.remove('playing');
+                    icon.textContent = '▶️';
+                    text.textContent = 'Play';
+                }
+            }
+
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+
+        // Initialize viewer with data
         function initializeViewer(data) {
             try {
-                // Validate data structure
                 if (!data.metadata || !data.segments) {
                     throw new Error('Invalid JSON structure. Must contain "metadata" and "segments".');
                 }
 
-                // Update title
-                document.getElementById('viewerTitle').textContent = data.metadata.title || 'Bilingual Text Alignment';
-                document.getElementById('sourceLangLabel').textContent = (data.metadata.sourceLanguage || 'SOURCE').toUpperCase();
-                document.getElementById('targetLangLabel').textContent = (data.metadata.targetLanguage || 'TARGET').toUpperCase();
+                const title = data.metadata.title || 'Bilingual Text Alignment';
+                const sourceLang = (data.metadata.sourceLanguage || 'SOURCE').toUpperCase();
+                const targetLang = (data.metadata.targetLanguage || 'TARGET').toUpperCase();
 
-                // Initialize mapper and viewer
+                document.getElementById('viewerTitle').textContent = title;
+                document.getElementById('sourceLangLabel').innerHTML = `${sourceLang} 🔊`;
+                document.getElementById('targetLangLabel').textContent = targetLang;
+
                 mapper = new BilingualTextMapper(data);
-
-                // Clear previous content
-                document.getElementById('sourcePanel').innerHTML = '';
-                document.getElementById('targetPanel').innerHTML = '';
-
-                // Render content
                 renderContent();
 
-                // Hide file picker, show viewer
+                // Initialize TTS for SOURCE language
+                ttsManager = new TTSManager(data);
+
                 document.getElementById('filePickerSection').classList.add('hidden');
                 document.getElementById('viewerSection').style.display = 'block';
 
-                console.log('Viewer initialized successfully!');
+                console.log(`✅ Viewer initialized: ${title}`);
+                console.log(`📢 TTS will read: ${sourceLang}`);
             } catch (error) {
                 showError(error.message);
                 throw error;
             }
         }
 
-        // Render the alignment content
         function renderContent() {
             const segments = mapper.getSegments();
             const sourcePanel = document.getElementById('sourcePanel');
             const targetPanel = document.getElementById('targetPanel');
 
             segments.forEach(segment => {
-                // Render source segment
                 const sourcePara = document.createElement('p');
                 sourcePara.className = 'segment';
                 segment.source.forEach(lexeme => {
@@ -463,7 +848,6 @@
                 });
                 sourcePanel.appendChild(sourcePara);
 
-                // Render target segment
                 const targetPara = document.createElement('p');
                 targetPara.className = 'segment';
                 segment.target.forEach(lexeme => {
@@ -474,11 +858,9 @@
                 targetPanel.appendChild(targetPara);
             });
 
-            // Add click handlers
             attachClickHandlers();
         }
 
-        // Create lexeme element
         function createLexemeElement(lexeme) {
             const span = document.createElement('span');
             span.className = 'lexeme';
@@ -487,39 +869,43 @@
             return span;
         }
 
-        // Attach click handlers to all lexemes
         function attachClickHandlers() {
             const lexemes = document.querySelectorAll('.lexeme');
 
             lexemes.forEach(lexeme => {
                 lexeme.addEventListener('click', (e) => {
-                    const lexemeId = e.target.id;
-                    mapper.highlightAlignment(lexemeId);
+                    mapper.highlightAlignment(e.target.id);
                 });
 
                 lexeme.addEventListener('mouseenter', (e) => {
-                    e.target.classList.add('hover');
+                    if (!e.target.classList.contains('speaking')) {
+                        e.target.style.background = '#ffd70020';
+                    }
                 });
 
                 lexeme.addEventListener('mouseleave', (e) => {
-                    e.target.classList.remove('hover');
+                    if (!e.target.classList.contains('speaking') &&
+                        !e.target.classList.contains('selected') &&
+                        !e.target.classList.contains('highlighted')) {
+                        e.target.style.background = '';
+                    }
                 });
             });
 
-            // Click outside to clear highlights
             document.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('lexeme')) {
-                    mapper.clearHighlights();
+                if (!e.target.classList.contains('lexeme') &&
+                    !e.target.closest('.tts-controls') &&
+                    !e.target.closest('.tts-settings')) {
+                    if (mapper) mapper.clearHighlights();
                 }
             });
         }
 
-        // Handle file selection
+        // File input handler
         document.getElementById('fileInputViewer').addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) return;
 
-            // Show selected file name
             document.getElementById('fileName').textContent = file.name;
             document.getElementById('selectedFileInfo').classList.add('visible');
             hideError();
@@ -531,26 +917,20 @@
                     const data = JSON.parse(e.target.result);
                     initializeViewer(data);
                 } catch (error) {
-                    showError(`Failed to parse JSON file: ${error.message}`);
-                    console.error('Error loading file:', error);
+                    showError(`Failed to parse JSON: ${error.message}`);
                 }
-            };
-
-            reader.onerror = () => {
-                showError('Failed to read file. Please try again.');
             };
 
             reader.readAsText(file);
         });
 
-        // Load demo data
+        // Load demo button
         document.getElementById('loadDemoBtn').addEventListener('click', (e) => {
             e.preventDefault();
             hideError();
             initializeViewer(demoData);
         });
 
-        // Error handling
         function showError(message) {
             document.getElementById('errorText').textContent = message;
             document.getElementById('errorMessage').classList.add('visible');
@@ -558,19 +938,6 @@
 
         function hideError() {
             document.getElementById('errorMessage').classList.remove('visible');
-        }
-
-        // Optional: Auto-load if JSON file is provided via URL parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const jsonUrl = urlParams.get('json');
-        if (jsonUrl) {
-            fetch(jsonUrl)
-                .then(response => response.json())
-                .then(data => initializeViewer(data))
-                .catch(error => {
-                    console.error('Error loading JSON from URL:', error);
-                    showError('Failed to load JSON from URL parameter.');
-                });
         }
     </script>
 </body>
