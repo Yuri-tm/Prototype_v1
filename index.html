@@ -47,13 +47,39 @@
         }
 
         /* TTS Controls */
-        .tts-controls {
+        .tts-controls,
+        .tts-controls-header {
             position: absolute;
             top: 20px;
             right: 30px;
             display: flex;
             gap: 10px;
             align-items: center;
+        }
+
+        .mobile-bottom-bar {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 16px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            min-height: 56px;
+        }
+
+        .mobile-bottom-bar .tts-button {
+            min-width: 44px;
+            min-height: 44px;
+            padding: 12px 24px;
+            font-size: 18px;
         }
 
         .tts-button {
@@ -351,25 +377,95 @@
             display: block;
         }
 
+        /* Mobile: paging mode, no vertical scroll, bottom bar */
         @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            #app {
+                border-radius: 0;
+                box-shadow: none;
+                max-width: none;
+            }
+
+            .viewer-header {
+                padding: 16px 12px;
+            }
+
+            .viewer-header h1 {
+                font-size: 20px;
+                margin-bottom: 10px;
+            }
+
             .viewer-content {
                 flex-direction: column;
+                min-height: 0;
+                flex: 1;
+                overflow: hidden;
+                touch-action: pan-y;
             }
 
             .divider {
                 height: 2px;
                 width: 100%;
+                flex-shrink: 0;
             }
 
             .text-panel {
-                padding: 20px;
+                padding: 16px;
                 max-height: none;
+                overflow: hidden;
+                overflow-y: hidden;
+                flex: 1;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
             }
 
-            .tts-controls {
-                position: static;
-                justify-content: center;
-                margin-top: 15px;
+            .text-panel .segment {
+                font-size: 18px;
+                line-height: 1.85;
+                margin-bottom: 16px;
+                text-wrap: balance;
+            }
+
+            .text-panel .segment:last-child {
+                margin-bottom: 0;
+            }
+
+            .lexeme {
+                padding: 6px 4px;
+                min-height: 28px;
+            }
+
+            .tts-controls-header {
+                display: none;
+            }
+
+            .viewer-body-with-bar {
+                display: flex;
+                flex-direction: column;
+                min-height: 100vh;
+                min-height: 100dvh;
+            }
+
+            .viewer-content-wrap {
+                flex: 1;
+                min-height: 0;
+                overflow: hidden;
+            }
+
+            .mobile-bottom-bar {
+                display: flex;
+                flex-shrink: 0;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-bottom-bar {
+                display: none;
             }
         }
 
@@ -419,12 +515,12 @@
         </div>
 
         <!-- Viewer Section -->
-        <div id="viewerSection" style="display: none;">
+        <div id="viewerSection" style="display: none;" class="viewer-body-with-bar">
             <div class="viewer-header">
                 <h1 id="viewerTitle">Bilingual Text Alignment</h1>
 
-                <!-- TTS Controls -->
-                <div class="tts-controls">
+                <!-- TTS Controls (desktop: in header) -->
+                <div id="ttsControlsHeader" class="tts-controls tts-controls-header">
                     <button id="ttsPlayPause" class="tts-button">
                         <span id="ttsIcon">▶️</span>
                         <span id="ttsText">Play</span>
@@ -456,10 +552,21 @@
                 </div>
             </div>
 
-            <div class="viewer-content">
-                <div class="text-panel source-panel" id="sourcePanel"></div>
-                <div class="divider"></div>
-                <div class="text-panel target-panel" id="targetPanel"></div>
+            <div class="viewer-content-wrap">
+                <div class="viewer-content" id="viewerContent">
+                    <div class="text-panel source-panel" id="sourcePanel"></div>
+                    <div class="divider"></div>
+                    <div class="text-panel target-panel" id="targetPanel"></div>
+                </div>
+            </div>
+
+            <!-- Mobile: fixed bottom bar with TTS controls -->
+            <div class="mobile-bottom-bar" id="mobileBottomBar">
+                <button id="ttsPlayPauseMobile" class="tts-button" aria-label="Play / Pause">
+                    <span id="ttsIconMobile">▶️</span>
+                    <span id="ttsTextMobile">Play</span>
+                </button>
+                <button id="ttsSettingsMobile" class="tts-button" aria-label="TTS Settings">⚙️</button>
             </div>
         </div>
     </div>
@@ -469,6 +576,110 @@
     <script>
         let mapper = null;
         let ttsManager = null;
+        let pages = [];
+        let currentPageIndex = 0;
+        const MOBILE_BREAKPOINT = 768;
+
+        function isMobileView() {
+            return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
+        }
+
+        function buildPages() {
+            const segments = mapper.getSegments();
+            if (!segments.length) return [];
+
+            const contentWrap = document.querySelector('.viewer-content-wrap');
+            const sourcePanel = document.getElementById('sourcePanel');
+            if (!contentWrap || !sourcePanel) return [];
+
+            const maxHeight = contentWrap.clientHeight;
+            const halfHeight = (maxHeight - 2) / 2;
+            const measureDiv = document.createElement('div');
+            measureDiv.className = 'text-panel source-panel';
+            measureDiv.style.cssText = 'position:absolute;left:-9999px;top:0;width:' + sourcePanel.offsetWidth + 'px;padding:16px;visibility:hidden;pointer-events:none;';
+            measureDiv.style.fontSize = '18px';
+            measureDiv.style.lineHeight = '1.85';
+            document.body.appendChild(measureDiv);
+
+            const pageList = [];
+            let currentPage = [];
+            let currentHeight = 0;
+
+            for (let i = 0; i < segments.length; i++) {
+                const seg = segments[i];
+                const p = document.createElement('p');
+                p.className = 'segment';
+                p.style.marginBottom = '16px';
+                seg.source.forEach(lex => {
+                    const s = document.createElement('span');
+                    s.textContent = lex.text + ' ';
+                    p.appendChild(s);
+                });
+                measureDiv.appendChild(p);
+                currentHeight = measureDiv.scrollHeight;
+
+                if (currentPage.length > 0 && currentHeight > halfHeight) {
+                    measureDiv.removeChild(p);
+                    currentHeight = measureDiv.scrollHeight;
+                    pageList.push(currentPage.slice());
+                    currentPage = [];
+                    measureDiv.innerHTML = '';
+                    measureDiv.appendChild(p);
+                    currentHeight = measureDiv.scrollHeight;
+                }
+                currentPage.push(i);
+            }
+
+            document.body.removeChild(measureDiv);
+            if (currentPage.length) pageList.push(currentPage);
+            return pageList;
+        }
+
+        function getPageIndexForSegment(segmentIndex) {
+            for (let p = 0; p < pages.length; p++) {
+                if (pages[p].indexOf(segmentIndex) !== -1) return p;
+            }
+            return 0;
+        }
+
+        function goToPage(pageIndex) {
+            if (pageIndex < 0 || pageIndex >= pages.length) return;
+            currentPageIndex = pageIndex;
+            renderPage(pageIndex);
+        }
+
+        function renderPage(pageIndex) {
+            if (pageIndex < 0 || pageIndex >= pages.length) return;
+            const segmentIndices = pages[pageIndex];
+            const segments = mapper.getSegments();
+            const sourcePanel = document.getElementById('sourcePanel');
+            const targetPanel = document.getElementById('targetPanel');
+            sourcePanel.innerHTML = '';
+            targetPanel.innerHTML = '';
+
+            segmentIndices.forEach(idx => {
+                const segment = segments[idx];
+                const sourcePara = document.createElement('p');
+                sourcePara.className = 'segment';
+                segment.source.forEach(lexeme => {
+                    const span = createLexemeElement(lexeme);
+                    sourcePara.appendChild(span);
+                    sourcePara.appendChild(document.createTextNode(' '));
+                });
+                sourcePanel.appendChild(sourcePara);
+
+                const targetPara = document.createElement('p');
+                targetPara.className = 'segment';
+                segment.target.forEach(lexeme => {
+                    const span = createLexemeElement(lexeme);
+                    targetPara.appendChild(span);
+                    targetPara.appendChild(document.createTextNode(' '));
+                });
+                targetPanel.appendChild(targetPara);
+            });
+
+            attachClickHandlers();
+        }
 
         // Demo data
         const demoData = {
@@ -538,7 +749,7 @@
 
         // TTS Manager Class - Reads SOURCE language only
         class TTSManager {
-            constructor(data) {
+            constructor(data, options = {}) {
                 this.data = data;
                 this.isPlaying = false;
                 this.isPaused = false;
@@ -549,6 +760,8 @@
                 this.pitch = 1.0;
                 this.sourceLanguage = data.metadata.sourceLanguage || 'en';
                 this.sourceLangCode = LANGUAGE_CODES[this.sourceLanguage] || 'en-US';
+                this.goToPage = options.goToPage || (() => {});
+                this.getPageIndexForSegment = options.getPageIndexForSegment || (() => 0);
 
                 this.initVoices();
                 this.setupControls();
@@ -612,17 +825,20 @@
 
             setupControls() {
                 const playPauseBtn = document.getElementById('ttsPlayPause');
+                const playPauseMobile = document.getElementById('ttsPlayPauseMobile');
+                const settingsBtn = document.getElementById('ttsSettings');
+                const settingsMobile = document.getElementById('ttsSettingsMobile');
 
-                // Play/Pause button
-                playPauseBtn.addEventListener('click', () => {
-                    this.togglePlayPause();
-                });
-
-                // Settings button
-                document.getElementById('ttsSettings').addEventListener('click', () => {
+                const togglePlay = () => this.togglePlayPause();
+                const toggleSettings = () => {
                     const panel = document.getElementById('ttsSettingsPanel');
                     panel.classList.toggle('visible');
-                });
+                };
+
+                if (playPauseBtn) playPauseBtn.addEventListener('click', togglePlay);
+                if (playPauseMobile) playPauseMobile.addEventListener('click', togglePlay);
+                if (settingsBtn) settingsBtn.addEventListener('click', toggleSettings);
+                if (settingsMobile) settingsMobile.addEventListener('click', toggleSettings);
 
                 // Voice selection
                 document.getElementById('voiceSelect').addEventListener('change', (e) => {
@@ -691,6 +907,8 @@
                     if (!this.isPlaying) break;
 
                     this.currentSegmentIndex = i;
+                    const pageIndex = this.getPageIndexForSegment(i);
+                    this.goToPage(pageIndex);
                     const segment = segments[i];
                     const sourceWords = segment.source;
 
@@ -781,19 +999,16 @@
             }
 
             updatePlayButton(playing) {
-                const button = document.getElementById('ttsPlayPause');
-                const icon = document.getElementById('ttsIcon');
-                const text = document.getElementById('ttsText');
-
-                if (playing) {
-                    button.classList.add('playing');
-                    icon.textContent = '⏸️';
-                    text.textContent = 'Pause';
-                } else {
-                    button.classList.remove('playing');
-                    icon.textContent = '▶️';
-                    text.textContent = 'Play';
-                }
+                const set = (btnId, iconId, textId) => {
+                    const button = document.getElementById(btnId);
+                    const icon = document.getElementById(iconId);
+                    const text = document.getElementById(textId);
+                    if (button) button.classList.toggle('playing', playing);
+                    if (icon) icon.textContent = playing ? '⏸️' : '▶️';
+                    if (text) text.textContent = playing ? 'Pause' : 'Play';
+                };
+                set('ttsPlayPause', 'ttsIcon', 'ttsText');
+                set('ttsPlayPauseMobile', 'ttsIconMobile', 'ttsTextMobile');
             }
 
             sleep(ms) {
@@ -817,13 +1032,31 @@
                 document.getElementById('targetLangLabel').textContent = targetLang;
 
                 mapper = new BilingualTextMapper(data);
-                renderContent();
-
-                // Initialize TTS for SOURCE language
-                ttsManager = new TTSManager(data);
 
                 document.getElementById('filePickerSection').classList.add('hidden');
                 document.getElementById('viewerSection').style.display = 'block';
+
+                if (isMobileView()) {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            pages = buildPages();
+                            if (pages.length) {
+                                currentPageIndex = 0;
+                                renderPage(0);
+                            } else {
+                                renderContent();
+                            }
+                            attachSwipeListeners();
+                        });
+                    });
+                } else {
+                    renderContent();
+                }
+
+                ttsManager = new TTSManager(data, {
+                    goToPage,
+                    getPageIndexForSegment
+                });
 
                 console.log(`✅ Viewer initialized: ${title}`);
                 console.log(`📢 TTS will read: ${sourceLang}`);
@@ -895,10 +1128,34 @@
             document.addEventListener('click', (e) => {
                 if (!e.target.classList.contains('lexeme') &&
                     !e.target.closest('.tts-controls') &&
-                    !e.target.closest('.tts-settings')) {
+                    !e.target.closest('.tts-settings') &&
+                    !e.target.closest('.mobile-bottom-bar')) {
                     if (mapper) mapper.clearHighlights();
                 }
             });
+        }
+
+        const SWIPE_THRESHOLD_X = 60;
+        const SWIPE_THRESHOLD_Y = 30;
+
+        function attachSwipeListeners() {
+            const el = document.getElementById('viewerContent');
+            if (!el) return;
+            let startX = 0, startY = 0;
+            el.addEventListener('touchstart', (e) => {
+                if (e.touches.length !== 1) return;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            }, { passive: true });
+            el.addEventListener('touchend', (e) => {
+                if (e.changedTouches.length !== 1) return;
+                const dx = e.changedTouches[0].clientX - startX;
+                const dy = e.changedTouches[0].clientY - startY;
+                if (Math.abs(dx) > SWIPE_THRESHOLD_X && Math.abs(dy) < SWIPE_THRESHOLD_Y) {
+                    if (dx > 0) goToPage(currentPageIndex - 1);
+                    else goToPage(currentPageIndex + 1);
+                }
+            }, { passive: true });
         }
 
         // File input handler
