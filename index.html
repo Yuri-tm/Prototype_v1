@@ -201,6 +201,8 @@
             display: flex;
             min-height: 600px;
             position: relative;
+            transition: transform 0.3s ease;
+            will-change: transform;
         }
 
         .text-panel {
@@ -379,6 +381,12 @@
 
         /* Mobile: paging mode, no vertical scroll, bottom bar */
         @media (max-width: 768px) {
+            html,
+            body {
+                height: 100%;
+                overflow: hidden;
+            }
+
             body {
                 padding: 0;
             }
@@ -578,6 +586,7 @@
         let ttsManager = null;
         let pages = [];
         let currentPageIndex = 0;
+        let isPageAnimating = false;
         const MOBILE_BREAKPOINT = 768;
 
         function isMobileView() {
@@ -644,8 +653,58 @@
 
         function goToPage(pageIndex) {
             if (pageIndex < 0 || pageIndex >= pages.length) return;
-            currentPageIndex = pageIndex;
-            renderPage(pageIndex);
+            if (isMobileView()) {
+                animatePageChange(pageIndex);
+            } else {
+                currentPageIndex = pageIndex;
+                renderPage(pageIndex);
+            }
+        }
+
+        function animatePageChange(newIndex) {
+            if (newIndex === currentPageIndex) return;
+            if (newIndex < 0 || newIndex >= pages.length) return;
+            if (isPageAnimating) return;
+
+            const viewerContent = document.getElementById('viewerContent');
+            if (!viewerContent) {
+                currentPageIndex = newIndex;
+                renderPage(newIndex);
+                return;
+            }
+
+            isPageAnimating = true;
+            const direction = newIndex > currentPageIndex ? -1 : 1;
+
+            viewerContent.style.transform = 'translateX(0)';
+
+            requestAnimationFrame(() => {
+                viewerContent.style.transform = `translateX(${direction * 100}%)`;
+            });
+
+            const onTransitionEnd = (event) => {
+                if (event.target !== viewerContent || event.propertyName !== 'transform') return;
+
+                viewerContent.removeEventListener('transitionend', onTransitionEnd);
+
+                const enterFrom = -direction * 100;
+
+                viewerContent.style.transition = 'none';
+                viewerContent.style.transform = `translateX(${enterFrom}%)`;
+
+                currentPageIndex = newIndex;
+                renderPage(newIndex);
+
+                // Force reflow so that the browser applies the transform before re-enabling transition
+                void viewerContent.offsetWidth;
+
+                viewerContent.style.transition = '';
+                viewerContent.style.transform = 'translateX(0)';
+
+                isPageAnimating = false;
+            };
+
+            viewerContent.addEventListener('transitionend', onTransitionEnd);
         }
 
         function renderPage(pageIndex) {
@@ -756,6 +815,7 @@
                 this.currentSegmentIndex = 0;
                 this.voices = [];
                 this.selectedVoice = null;
+                this.selectedVoiceName = null;
                 this.rate = 1.0;
                 this.pitch = 1.0;
                 this.sourceLanguage = data.metadata.sourceLanguage || 'en';
@@ -791,6 +851,8 @@
                 const voiceSelect = document.getElementById('voiceSelect');
                 voiceSelect.innerHTML = '';
 
+                const previousName = this.selectedVoice ? this.selectedVoice.name : this.selectedVoiceName;
+
                 // Filter voices for SOURCE language only
                 const languageVoices = this.voices.filter(voice =>
                     voice.lang.startsWith(this.sourceLanguage) ||
@@ -803,24 +865,36 @@
                     languageVoices.push(...fallbackVoices);
                 }
 
+                let matchedVoice = null;
+
                 languageVoices.forEach((voice, index) => {
                     const option = document.createElement('option');
                     option.value = voice.name;
                     option.textContent = `${voice.name} (${voice.lang})`;
-                    if (voice.default) {
+                    if (voice.name === previousName) {
                         option.selected = true;
+                        matchedVoice = voice;
+                    } else if (!previousName && voice.default) {
+                        option.selected = true;
+                        matchedVoice = voice;
                     }
                     voiceSelect.appendChild(option);
                 });
 
                 if (languageVoices.length > 0) {
-                    this.selectedVoice = languageVoices[0];
+                    if (matchedVoice) {
+                        this.selectedVoice = matchedVoice;
+                    } else {
+                        this.selectedVoice = languageVoices[0] || this.voices[0] || null;
+                    }
                     console.log(`TTS initialized for ${this.sourceLanguage.toUpperCase()} with ${languageVoices.length} voice(s)`);
                 } else {
                     console.warn(`No voices found for language: ${this.sourceLanguage}`);
                     // Use first available voice as fallback
-                    this.selectedVoice = this.voices[0];
+                    this.selectedVoice = this.voices[0] || null;
                 }
+
+                this.selectedVoiceName = this.selectedVoice ? this.selectedVoice.name : null;
             }
 
             setupControls() {
@@ -843,7 +917,13 @@
                 // Voice selection
                 document.getElementById('voiceSelect').addEventListener('change', (e) => {
                     this.selectedVoice = this.voices.find(v => v.name === e.target.value);
-                    console.log('Voice changed to:', this.selectedVoice.name);
+                    if (this.selectedVoice) {
+                        this.selectedVoiceName = this.selectedVoice.name;
+                        console.log('Voice changed to:', this.selectedVoice.name);
+                    } else {
+                        this.selectedVoiceName = null;
+                        console.log('Voice changed but matching voice not found.');
+                    }
                 });
 
                 // Speed control
@@ -1016,6 +1096,43 @@
             }
         }
 
+        function ensurePagesForAllSegments() {
+            if (pages && pages.length) return;
+            const segments = mapper.getSegments();
+            if (!segments || !segments.length) return;
+            pages = [segments.map((_, idx) => idx)];
+        }
+
+        function setupResponsiveLayout() {
+            const sourcePanel = document.getElementById('sourcePanel');
+            const targetPanel = document.getElementById('targetPanel');
+            if (!sourcePanel || !targetPanel || !mapper) return;
+
+            sourcePanel.innerHTML = '';
+            targetPanel.innerHTML = '';
+
+            if (isMobileView()) {
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        pages = buildPages();
+                        if (!pages.length) {
+                            // Гарантируем хотя бы одну страницу даже при сбое измерения
+                            ensurePagesForAllSegments();
+                        }
+                        if (pages.length) {
+                            currentPageIndex = 0;
+                            renderPage(0);
+                            attachSwipeListeners();
+                        }
+                    });
+                });
+            } else {
+                pages = [];
+                currentPageIndex = 0;
+                renderContent();
+            }
+        }
+
         // Initialize viewer with data
         function initializeViewer(data) {
             try {
@@ -1036,22 +1153,7 @@
                 document.getElementById('filePickerSection').classList.add('hidden');
                 document.getElementById('viewerSection').style.display = 'block';
 
-                if (isMobileView()) {
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            pages = buildPages();
-                            if (pages.length) {
-                                currentPageIndex = 0;
-                                renderPage(0);
-                            } else {
-                                renderContent();
-                            }
-                            attachSwipeListeners();
-                        });
-                    });
-                } else {
-                    renderContent();
-                }
+                setupResponsiveLayout();
 
                 ttsManager = new TTSManager(data, {
                     goToPage,
