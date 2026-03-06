@@ -67,10 +67,17 @@ class BilingualTextMapper {
         this.currentHighlights.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
-                element.classList.remove('highlighted', 'selected');
+                element.classList.remove('highlighted', 'selected', 'speaking');
+                element.style.background = ''; // Clear inline styles
             }
         });
         this.currentHighlights.clear();
+
+        // Additional safeguard: clear any remaining highlight classes
+        document.querySelectorAll('.selected, .highlighted, .speaking').forEach(el => {
+            el.classList.remove('highlighted', 'selected', 'speaking');
+            el.style.background = '';
+        });
     }
 
     /**
