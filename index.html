@@ -381,6 +381,7 @@
 
         /* Mobile: paging mode, no vertical scroll, bottom bar */
         @media (max-width: 768px) {
+
             html,
             body {
                 height: 100%;
@@ -444,8 +445,29 @@
             }
 
             .lexeme {
-                padding: 6px 4px;
-                min-height: 28px;
+                padding: 8px 4px;
+                min-height: 32px;
+                transform: none !important;
+                /* Disable transform on mobile to prevent animation jank */
+            }
+
+            .lexeme.selected {
+                transform: none !important;
+                padding: 8px 8px;
+            }
+
+            .lexeme.speaking {
+                animation: mobile-speaking-pulse 0.3s infinite alternate;
+            }
+
+            @keyframes mobile-speaking-pulse {
+                from {
+                    opacity: 1;
+                }
+
+                to {
+                    opacity: 0.85;
+                }
             }
 
             .tts-controls-header {
@@ -820,7 +842,7 @@
                 this.pitch = 1.0;
                 this.sourceLanguage = data.metadata.sourceLanguage || 'en';
                 this.sourceLangCode = LANGUAGE_CODES[this.sourceLanguage] || 'en-US';
-                this.goToPage = options.goToPage || (() => {});
+                this.goToPage = options.goToPage || (() => { });
                 this.getPageIndexForSegment = options.getPageIndexForSegment || (() => 0);
 
                 this.initVoices();
@@ -1016,16 +1038,24 @@
                     utterance.lang = this.sourceLangCode;
 
                     let wordIndex = 0;
+                    let highlightTimeout = null;
 
-                    // Highlight words as they're spoken
+                    // Estimate word duration based on text length and speech rate
+                    const wordArray = words.filter(w => w && w.text);
+                    const estimatedWordDuration = Math.max(200, 60000 / (this.rate * 150));
+
+                    // Try to use onboundary for better accuracy (desktop browsers)
+                    let boundarySupported = false;
+
                     utterance.onboundary = (event) => {
                         if (event.name === 'word') {
+                            boundarySupported = true;
                             // Clear previous highlight
                             this.clearHighlights();
 
                             // Highlight current word
-                            if (wordIndex < words.length) {
-                                const currentWord = words[wordIndex];
+                            if (wordIndex < wordArray.length) {
+                                const currentWord = wordArray[wordIndex];
                                 this.highlightWord(currentWord.id);
 
                                 // Also highlight aligned target words
@@ -1043,13 +1073,47 @@
                         }
                     };
 
+                    // Fallback: Use timer-based highlighting for better mobile compatibility
+                    utterance.onstart = () => {
+                        // Start fallback timer immediately - if onboundary works, it will take over
+                        const highlightNextWord = () => {
+                            if (!this.isPlaying) return;
+
+                            // Only use fallback if boundary events aren't being triggered
+                            if (!boundarySupported && wordIndex < wordArray.length) {
+                                this.clearHighlights();
+                                const currentWord = wordArray[wordIndex];
+                                this.highlightWord(currentWord.id);
+
+                                // Also highlight aligned target words
+                                if (currentWord.alignments && currentWord.alignments.length > 0) {
+                                    currentWord.alignments.forEach(targetId => {
+                                        const targetElement = document.getElementById(targetId);
+                                        if (targetElement) {
+                                            targetElement.classList.add('highlighted');
+                                        }
+                                    });
+                                }
+
+                                wordIndex++;
+                                highlightTimeout = setTimeout(highlightNextWord, estimatedWordDuration);
+                            } else if (boundarySupported) {
+                                // Boundary events are working, clear the fallback timer
+                                return;
+                            }
+                        };
+                        highlightTimeout = setTimeout(highlightNextWord, estimatedWordDuration);
+                    };
+
                     utterance.onend = () => {
+                        if (highlightTimeout) clearTimeout(highlightTimeout);
                         this.clearHighlights();
                         resolve();
                     };
 
                     utterance.onerror = (event) => {
                         console.error('Speech synthesis error:', event);
+                        if (highlightTimeout) clearTimeout(highlightTimeout);
                         this.clearHighlights();
                         resolve();
                     };
@@ -1063,18 +1127,32 @@
                 if (wordElement) {
                     wordElement.classList.add('speaking');
 
-                    // Scroll into view if needed
-                    wordElement.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center',
-                        inline: 'nearest'
-                    });
+                    // Scroll into view - mobile-safe approach
+                    try {
+                        if (isMobileView()) {
+                            // Mobile: use simple scroll without smooth animation
+                            wordElement.scrollIntoView({
+                                block: 'nearest',
+                                inline: 'nearest'
+                            });
+                        } else {
+                            // Desktop: use smooth scrolling
+                            wordElement.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center',
+                                inline: 'nearest'
+                            });
+                        }
+                    } catch (e) {
+                        // Fallback for browsers that don't support scrollIntoView options
+                        wordElement.scrollIntoView();
+                    }
                 }
             }
 
             clearHighlights() {
-                document.querySelectorAll('.speaking, .highlighted').forEach(el => {
-                    el.classList.remove('speaking', 'highlighted');
+                document.querySelectorAll('.speaking, .highlighted, .selected').forEach(el => {
+                    el.classList.remove('speaking', 'highlighted', 'selected');
                 });
             }
 
@@ -1206,35 +1284,72 @@
 
         function attachClickHandlers() {
             const lexemes = document.querySelectorAll('.lexeme');
+            const isMobile = isMobileView && isMobileView();
 
             lexemes.forEach(lexeme => {
+                // DESKTOP: Click handler
                 lexeme.addEventListener('click', (e) => {
-                    mapper.highlightAlignment(e.target.id);
+                    e.stopPropagation();
+                    mapper.highlightAlignment(e.currentTarget.id);
                 });
 
-                lexeme.addEventListener('mouseenter', (e) => {
-                    if (!e.target.classList.contains('speaking')) {
-                        e.target.style.background = '#ffd70020';
-                    }
+                // MOBILE: Touch handlers (more reliable than click on mobile)
+                lexeme.addEventListener('touchstart', (e) => {
+                    e.stopPropagation();
+                }, { passive: true });
+
+                lexeme.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    mapper.highlightAlignment(e.currentTarget.id);
                 });
 
-                lexeme.addEventListener('mouseleave', (e) => {
-                    if (!e.target.classList.contains('speaking') &&
-                        !e.target.classList.contains('selected') &&
-                        !e.target.classList.contains('highlighted')) {
-                        e.target.style.background = '';
-                    }
-                });
+                // Hover effect (desktop only - not applicable to mobile/touch)
+                if (!isMobile) {
+                    lexeme.addEventListener('mouseenter', (e) => {
+                        if (!e.target.classList.contains('speaking')) {
+                            e.target.style.background = '#ffd70020';
+                        }
+                    });
+
+                    lexeme.addEventListener('mouseleave', (e) => {
+                        if (!e.target.classList.contains('speaking') &&
+                            !e.target.classList.contains('selected') &&
+                            !e.target.classList.contains('highlighted')) {
+                            e.target.style.background = '';
+                        }
+                    });
+                }
             });
 
-            document.addEventListener('click', (e) => {
+            // DESKTOP: Clear highlights on outside click
+            const handleDocumentClick = (e) => {
                 if (!e.target.classList.contains('lexeme') &&
                     !e.target.closest('.tts-controls') &&
                     !e.target.closest('.tts-settings') &&
                     !e.target.closest('.mobile-bottom-bar')) {
                     if (mapper) mapper.clearHighlights();
                 }
-            });
+            };
+
+            document.removeEventListener('click', handleDocumentClick);
+            document.addEventListener('click', handleDocumentClick);
+
+            // MOBILE: Clear highlights on outside touch
+            const handleDocumentTouchEnd = (e) => {
+                const target = e.target;
+                if (!target.classList.contains('lexeme') &&
+                    !target.closest('.tts-controls') &&
+                    !target.closest('.tts-settings') &&
+                    !target.closest('.mobile-bottom-bar') &&
+                    !target.closest('input') &&
+                    !target.closest('select')) {
+                    if (mapper) mapper.clearHighlights();
+                }
+            };
+
+            document.removeEventListener('touchend', handleDocumentTouchEnd);
+            document.addEventListener('touchend', handleDocumentTouchEnd, { passive: true });
         }
 
         const SWIPE_THRESHOLD_X = 60;
