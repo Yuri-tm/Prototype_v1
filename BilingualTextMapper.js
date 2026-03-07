@@ -1,4 +1,4 @@
-class BilingualTextMapper {
+export class BilingualTextMapper {
     constructor(jsonData) {
         this.data = jsonData;
         this.alignmentMap = new Map();
