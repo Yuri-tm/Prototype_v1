@@ -240,6 +240,9 @@ class TTSManager {
         this.sourceLangCode = LANGUAGE_CODES[this.sourceLanguage] || 'en-US';
         this.goToPage = options.goToPage || (() => { });
         this.getPageIndexForSegment = options.getPageIndexForSegment || (() => 0);
+        this.activeProvider = null;
+        this.currentAudio = null;
+        this.resolveCurrentSpeech = null;
 
         this.initVoices();
         this.setupControls();
@@ -260,9 +263,16 @@ class TTSManager {
                 speechSynthesis.onvoiceschanged = loadVoices;
             }
         } else {
-            console.warn('Browser does not support Web Speech API');
-            alert('Your browser does not support text-to-speech. Please use Chrome, Edge, or Safari.');
+            console.warn('Browser does not support Web Speech API. Puter API will be used when available.');
         }
+    }
+
+    canUsePuter() {
+        return typeof window.puter !== 'undefined' && window.puter?.ai?.txt2speech;
+    }
+
+    canUseWebSpeech() {
+        return 'speechSynthesis' in window;
     }
 
     populateVoiceList() {
@@ -374,7 +384,13 @@ class TTSManager {
 
         if (this.isPaused) {
             this.isPaused = false;
-            speechSynthesis.resume();
+            if (this.activeProvider === 'puter' && this.currentAudio) {
+                this.currentAudio.play().catch((error) => {
+                    console.error('Unable to resume Puter audio:', error);
+                });
+            } else if (this.canUseWebSpeech()) {
+                speechSynthesis.resume();
+            }
         } else {
             this.speakSourceText();
         }
@@ -385,7 +401,11 @@ class TTSManager {
         this.isPaused = true;
         this.updatePlayButton(false);
         document.getElementById('sourceLangLabel').classList.remove('reading');
-        speechSynthesis.pause();
+        if (this.activeProvider === 'puter' && this.currentAudio) {
+            this.currentAudio.pause();
+        } else if (this.canUseWebSpeech()) {
+            speechSynthesis.pause();
+        }
     }
 
     stop() {
@@ -395,7 +415,17 @@ class TTSManager {
         this.updatePlayButton(false);
         this.clearHighlights();
         document.getElementById('sourceLangLabel').classList.remove('reading');
-        speechSynthesis.cancel();
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio = null;
+        }
+        if (this.resolveCurrentSpeech) {
+            this.resolveCurrentSpeech();
+            this.resolveCurrentSpeech = null;
+        }
+        if (this.canUseWebSpeech()) {
+            speechSynthesis.cancel();
+        }
     }
 
     async speakSourceText() {
@@ -413,7 +443,7 @@ class TTSManager {
             // Collect SOURCE text for the segment
             const segmentText = sourceWords.map(w => w.text).join(' ');
 
-            await this.speakWithWebAPI(segmentText, sourceWords);
+            await this.speakSegment(segmentText, sourceWords);
 
             // Small pause between segments
             if (this.isPlaying) {
@@ -423,6 +453,88 @@ class TTSManager {
 
         // Finished speaking all segments
         this.stop();
+    }
+
+    async speakSegment(text, words) {
+        if (this.canUsePuter()) {
+            this.activeProvider = 'puter';
+            try {
+                await this.speakWithPuterAPI(text, words);
+                return;
+            } catch (error) {
+                console.warn('Puter TTS failed, falling back to Web Speech API:', error);
+            }
+        }
+
+        if (this.canUseWebSpeech()) {
+            this.activeProvider = 'webspeech';
+            await this.speakWithWebAPI(text, words);
+            return;
+        }
+
+        alert('No text-to-speech provider is available in this browser.');
+    }
+
+    speakWithPuterAPI(text, words) {
+        return new Promise(async (resolve, reject) => {
+            this.resolveCurrentSpeech = resolve;
+            let wordIndex = 0;
+            let highlightTimeout = null;
+            const wordArray = words.filter(w => w && w.text);
+            const estimatedWordDuration = Math.max(200, 60000 / (this.rate * 150));
+
+            const highlightNextWord = () => {
+                if (!this.isPlaying || this.isPaused) {
+                    highlightTimeout = setTimeout(highlightNextWord, estimatedWordDuration);
+                    return;
+                }
+
+                if (wordIndex < wordArray.length) {
+                    this.clearHighlights();
+                    const currentWord = wordArray[wordIndex];
+                    this.highlightWord(currentWord.id);
+                    if (currentWord.alignments && currentWord.alignments.length > 0) {
+                        currentWord.alignments.forEach(targetId => {
+                            const targetElement = document.getElementById(targetId);
+                            if (targetElement) targetElement.classList.add('highlighted');
+                        });
+                    }
+                    wordIndex++;
+                    highlightTimeout = setTimeout(highlightNextWord, estimatedWordDuration);
+                }
+            };
+
+            try {
+                const audio = await puter.ai.txt2speech(text, this.sourceLangCode);
+                this.currentAudio = audio;
+                audio.playbackRate = this.rate;
+
+                audio.onended = () => {
+                    if (highlightTimeout) clearTimeout(highlightTimeout);
+                    this.clearHighlights();
+                    this.currentAudio = null;
+                    this.resolveCurrentSpeech = null;
+                    resolve();
+                };
+
+                audio.onerror = (event) => {
+                    if (highlightTimeout) clearTimeout(highlightTimeout);
+                    this.clearHighlights();
+                    this.currentAudio = null;
+                    this.resolveCurrentSpeech = null;
+                    reject(event);
+                };
+
+                highlightTimeout = setTimeout(highlightNextWord, estimatedWordDuration);
+                await audio.play();
+            } catch (error) {
+                if (highlightTimeout) clearTimeout(highlightTimeout);
+                this.clearHighlights();
+                this.currentAudio = null;
+                this.resolveCurrentSpeech = null;
+                reject(error);
+            }
+        });
     }
 
     speakWithWebAPI(text, words) {
